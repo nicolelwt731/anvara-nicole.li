@@ -4,8 +4,10 @@ export default [
   ...reactConfig,
   {
     files: ['**/*.{ts,tsx}'],
-    rules: {
-      // Frontend-specific rules
+    languageOptions: {
+      globals: {
+        process: 'readonly',
+      },
     },
   },
 ];

@@ -7,6 +7,7 @@ import { getAdSlot } from '@/lib/api';
 import { authClient } from '@/auth-client';
 import { deleteAdSlot } from '@/app/dashboard/publisher/actions';
 import { AdSlotForm } from '@/app/dashboard/publisher/components/ad-slot-form';
+import { trackMarketplaceEvent, trackButtonClick } from '@/lib/analytics';
 
 interface AdSlot {
   id: string;
@@ -69,7 +70,16 @@ export function AdSlotDetail({ id }: Props) {
   useEffect(() => {
     // Fetch ad slot
     getAdSlot(id)
-      .then((data) => setAdSlot(data as AdSlot))
+      .then((data) => {
+        const slot = data as AdSlot;
+        setAdSlot(slot);
+        // Track listing detail view
+        trackMarketplaceEvent('view_detail', slot.id, slot.type, {
+          listing_name: slot.name,
+          base_price: slot.basePrice,
+          is_available: slot.isAvailable,
+        });
+      })
       .catch(() => setError('Failed to load ad slot details'))
       .finally(() => setLoading(false));
 
@@ -99,6 +109,13 @@ export function AdSlotDetail({ id }: Props) {
   const handleBooking = async () => {
     if (!roleInfo?.sponsorId || !adSlot) return;
 
+    // Track button click
+    trackButtonClick('Book This Placement', 'marketplace_detail', {
+      listing_id: adSlot.id,
+      listing_type: adSlot.type,
+      listing_name: adSlot.name,
+    });
+
     setBooking(true);
     setBookingError(null);
 
@@ -125,6 +142,13 @@ export function AdSlotDetail({ id }: Props) {
 
       setBookingSuccess(true);
       setAdSlot({ ...adSlot, isAvailable: false });
+      
+      // Track successful booking
+      trackMarketplaceEvent('book_placement', adSlot.id, adSlot.type, {
+        listing_name: adSlot.name,
+        base_price: adSlot.basePrice,
+        has_message: Boolean(message),
+      });
     } catch (err) {
       setBookingError(err instanceof Error ? err.message : 'Failed to book placement');
     } finally {
@@ -134,6 +158,12 @@ export function AdSlotDetail({ id }: Props) {
 
   const handleUnbook = async () => {
     if (!adSlot) return;
+
+    // Track button click
+    trackButtonClick('Reset listing', 'marketplace_detail', {
+      listing_id: adSlot.id,
+      listing_type: adSlot.type,
+    });
 
     setUnbookError(null);
     setIsUnbooking(true);
@@ -158,6 +188,12 @@ export function AdSlotDetail({ id }: Props) {
       setBookingSuccess(false);
       setAdSlot({ ...adSlot, isAvailable: true });
       setMessage('');
+      
+      // Track successful unbooking
+      trackMarketplaceEvent('unbook_placement', adSlot.id, adSlot.type, {
+        listing_name: adSlot.name,
+      });
+      
       router.refresh();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to reset booking';
@@ -332,7 +368,7 @@ export function AdSlotDetail({ id }: Props) {
                   disabled={booking}
                   className="w-full rounded-lg bg-[--color-primary] px-4 py-3 font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-50"
                 >
-                  {booking ? 'Booking...' : 'Book This Placement'}
+                  {booking ? 'Booking...' : 'Request This Placement'}
                 </button>
               </div>
             ) : (

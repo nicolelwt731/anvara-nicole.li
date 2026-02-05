@@ -4,6 +4,7 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { authClient } from '@/auth-client';
+import { trackUserEngagement } from '@/lib/analytics';
 
 // eslint-disable-next-line no-undef
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4291';
@@ -73,6 +74,11 @@ export default function LoginPage() {
               const role = roleData.role === 'sponsor' ? 'sponsor' : 'publisher';
 
               saveLoginInfo(email, password, role);
+
+              // Track successful login
+              trackUserEngagement('login', role, {
+                user_id: userId,
+              });
 
               if (roleData.role === 'sponsor') {
                 router.push('/dashboard/sponsor');
