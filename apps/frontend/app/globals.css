@@ -126,3 +126,27 @@ select {
  * - text-[--color-foreground] for custom text colors
  * - p-[--spacing-container] for custom spacing
  */
+
+/* React Day Picker - dark theme (calendar) */
+.rdp-dark .rdp-root {
+  --rdp-accent-color: var(--color-primary);
+  --rdp-accent-background-color: #3b82f640;
+  --rdp-today-color: var(--color-primary-light);
+  color: var(--color-foreground);
+}
+.rdp-dark .rdp-day_button:hover:not([disabled]):not(.rdp-selected) {
+  background-color: var(--color-card-hover);
+}
+.rdp-dark .rdp-selected .rdp-day_button {
+  background-color: var(--color-primary) !important;
+  color: white !important;
+}
+.rdp-dark .rdp-chevron {
+  fill: var(--color-foreground);
+}
+.rdp-dark .rdp-month_caption {
+  color: var(--color-foreground);
+}
+.rdp-dark .rdp-weekday {
+  color: var(--color-muted);
+}

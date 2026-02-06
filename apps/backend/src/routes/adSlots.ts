@@ -1,11 +1,11 @@
 import { Router, type Response, type IRouter } from 'express';
 import { prisma } from '../db.js';
 import { getParam } from '../utils/helpers.js';
-import { requireAuth, requireRole, type AuthRequest } from '../auth.js';
+import { requireAuth, optionalAuth, requireRole, type AuthRequest } from '../auth.js';
 
 const router: IRouter = Router();
 
-router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
+router.get('/', optionalAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { type, available } = req.query;
 
@@ -55,6 +55,7 @@ router.get('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
       return;
     }
 
+    // Publishers may only view their own ad slots in dashboard context; sponsors and publishers can view any in marketplace
     if (req.user?.role === 'publisher' && adSlot.publisherId !== req.user.publisherId) {
       res.status(403).json({ error: "Forbidden - Cannot access another publisher's ad slot" });
       return;

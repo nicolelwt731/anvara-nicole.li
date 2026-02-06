@@ -72,9 +72,12 @@ export function AdSlotDetail({ id }: Props) {
   const [unbookError, setUnbookError] = useState<string | null>(null);
   const [isUnbooking, setIsUnbooking] = useState(false);
   const [showQuoteModal, setShowQuoteModal] = useState(false);
+  const [loginRequired, setLoginRequired] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
+    setLoginRequired(false);
+    setError(null);
     getAdSlot(id)
       .then((data) => {
         const slot = data as AdSlot;
@@ -92,7 +95,14 @@ export function AdSlotDetail({ id }: Props) {
           is_available: slot.isAvailable,
         });
       })
-      .catch(() => setError('Failed to load ad slot details'))
+      .catch((err) => {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (msg.includes('Unauthorized') || msg.toLowerCase().includes('log in')) {
+          setLoginRequired(true);
+        } else {
+          setError('Failed to load ad slot details');
+        }
+      })
       .finally(() => setLoading(false));
 
     authClient
@@ -235,6 +245,27 @@ export function AdSlotDetail({ id }: Props) {
 
   if (loading) {
     return <div className="py-12 text-center text-[--color-muted]">Loading...</div>;
+  }
+
+  if (loginRequired) {
+    return (
+      <div className="space-y-4">
+        <Link href="/marketplace" className="text-[--color-primary] hover:underline">
+          ← Back to Marketplace
+        </Link>
+        <div className="rounded-lg border border-[--color-border] bg-[--color-card] p-8 text-center">
+          <p className="mb-4 text-[--color-muted]">
+            Please log in to view placement details. Sponsors and publishers can access the full marketplace after signing in.
+          </p>
+          <Link
+            href="/login"
+            className="inline-flex rounded-lg bg-[--color-primary] px-4 py-2 font-medium text-white hover:opacity-90"
+          >
+            Log in
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   if (error || !adSlot) {

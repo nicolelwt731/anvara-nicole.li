@@ -3,6 +3,7 @@
 import type React from 'react';
 import { useState } from 'react';
 import { requestQuote, type QuoteRequestPayload } from '@/lib/api';
+import { DatePicker } from '@/app/components/date-picker';
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
 
@@ -18,7 +19,7 @@ export function RequestQuoteModal({ adSlotId, adSlotName, onClose }: Props) {
   const [phone, setPhone] = useState('');
   const [budget, setBudget] = useState('');
   const [goals, setGoals] = useState('');
-  const [timeline, setTimeline] = useState('');
+  const [preferredDate, setPreferredDate] = useState('');
   const [requirements, setRequirements] = useState('');
   const [status, setStatus] = useState<Status>('idle');
   const [message, setMessage] = useState('');
@@ -55,7 +56,7 @@ export function RequestQuoteModal({ adSlotId, adSlotName, onClose }: Props) {
       phone: phone.trim() || undefined,
       budget: budget.trim() || undefined,
       goals: goals.trim() || undefined,
-      timeline: timeline.trim() || undefined,
+      timeline: preferredDate.trim() || undefined,
       requirements: requirements.trim() || undefined,
     };
 
@@ -70,7 +71,7 @@ export function RequestQuoteModal({ adSlotId, adSlotName, onClose }: Props) {
         setPhone('');
         setBudget('');
         setGoals('');
-        setTimeline('');
+        setPreferredDate('');
         setRequirements('');
       } else {
         setStatus('error');
@@ -86,164 +87,158 @@ export function RequestQuoteModal({ adSlotId, adSlotName, onClose }: Props) {
 
   const disabled = status === 'loading';
 
+  const inputClass =
+    'w-full rounded-lg border border-[--color-border] bg-[--color-background] px-3 py-2.5 text-white placeholder:text-[--color-muted] focus:border-[--color-primary] focus:outline-none focus:ring-2 focus:ring-[--color-primary]/20';
+  const labelClass = 'mb-1.5 block text-sm font-medium text-[--color-foreground]';
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-xl rounded-lg bg-white p-6 shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black p-4">
+      <div className="w-full max-w-xl rounded-xl border border-[--color-border] bg-[--color-card] p-6 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Request a Quote</h2>
-          <button type="button" onClick={onClose} className="text-sm text-[--color-muted]">
+          <h2 className="text-xl font-semibold text-white">Request a Quote</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg px-3 py-1.5 text-sm text-[--color-muted] transition-colors hover:bg-[--color-card-hover] hover:text-white"
+          >
             Close
           </button>
         </div>
-        <p className="mb-4 text-sm text-[--color-muted]">
-          Tell us a bit about your campaign and we will follow up with a custom quote for
-          <span className="font-semibold"> {adSlotName}</span>.
+        <p className="mb-6 text-sm text-[--color-muted]">
+          Tell us a bit about your campaign and we will follow up with a custom quote for{' '}
+          <span className="font-semibold text-white">{adSlotName}</span>.
         </p>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label
-                htmlFor="quote-company"
-                className="mb-1 block text-sm font-medium text-[--color-foreground]"
-              >
+              <label htmlFor="quote-company" className={labelClass}>
                 Company name
               </label>
               <input
                 id="quote-company"
                 type="text"
                 value={companyName}
-                onChange={(event) => setCompanyName(event.target.value)}
-                className="w-full rounded-md border border-[--color-border] px-3 py-2 text-[--color-foreground] shadow-sm focus:border-[--color-primary] focus:outline-none focus:ring-1 focus:ring-[--color-primary]"
+                onChange={(e) => setCompanyName(e.target.value)}
+                className={inputClass}
                 disabled={disabled}
                 required
               />
             </div>
             <div>
-              <label
-                htmlFor="quote-email"
-                className="mb-1 block text-sm font-medium text-[--color-foreground]"
-              >
+              <label htmlFor="quote-email" className={labelClass}>
                 Contact email
               </label>
               <input
                 id="quote-email"
                 type="email"
                 value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                className="w-full rounded-md border border-[--color-border] px-3 py-2 text-[--color-foreground] shadow-sm focus:border-[--color-primary] focus:outline-none focus:ring-1 focus:ring-[--color-primary]"
+                onChange={(e) => setEmail(e.target.value)}
+                className={inputClass}
                 disabled={disabled}
                 required
               />
             </div>
           </div>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label
-                htmlFor="quote-phone"
-                className="mb-1 block text-sm font-medium text-[--color-foreground]"
-              >
+              <label htmlFor="quote-phone" className={labelClass}>
                 Phone (optional)
               </label>
               <input
                 id="quote-phone"
                 type="tel"
                 value={phone}
-                onChange={(event) => setPhone(event.target.value)}
-                className="w-full rounded-md border border-[--color-border] px-3 py-2 text-[--color-foreground] shadow-sm focus:border-[--color-primary] focus:outline-none focus:ring-1 focus:ring-[--color-primary]"
+                onChange={(e) => setPhone(e.target.value)}
+                className={inputClass}
                 disabled={disabled}
               />
             </div>
             <div>
-              <label
-                htmlFor="quote-budget"
-                className="mb-1 block text-sm font-medium text-[--color-foreground]"
-              >
+              <label htmlFor="quote-budget" className={labelClass}>
                 Estimated budget
               </label>
               <input
                 id="quote-budget"
                 type="text"
                 value={budget}
-                onChange={(event) => setBudget(event.target.value)}
+                onChange={(e) => setBudget(e.target.value)}
                 placeholder="$5,000 / month"
-                className="w-full rounded-md border border-[--color-border] px-3 py-2 text-[--color-foreground] shadow-sm focus:border-[--color-primary] focus:outline-none focus:ring-1 focus:ring-[--color-primary]"
+                className={inputClass}
                 disabled={disabled}
               />
             </div>
           </div>
           <div>
-            <label
-              htmlFor="quote-goals"
-              className="mb-1 block text-sm font-medium text-[--color-foreground]"
-            >
+            <label htmlFor="quote-goals" className={labelClass}>
               Campaign goals
             </label>
             <input
               id="quote-goals"
               type="text"
               value={goals}
-              onChange={(event) => setGoals(event.target.value)}
+              onChange={(e) => setGoals(e.target.value)}
               placeholder="Brand awareness, lead generation, etc."
-              className="w-full rounded-md border border-[--color-border] px-3 py-2 text-[--color-foreground] shadow-sm focus:border-[--color-primary] focus:outline-none focus:ring-1 focus:ring-[--color-primary]"
+              className={inputClass}
               disabled={disabled}
             />
           </div>
           <div>
-            <label
-              htmlFor="quote-timeline"
-              className="mb-1 block text-sm font-medium text-[--color-foreground]"
-            >
-              Timeline
+            <label htmlFor="quote-preferred-date" className={labelClass}>
+              Preferred start date
             </label>
-            <input
-              id="quote-timeline"
-              type="text"
-              value={timeline}
-              onChange={(event) => setTimeline(event.target.value)}
-              placeholder="Example: Q3 2026, 3-month campaign"
-              className="w-full rounded-md border border-[--color-border] px-3 py-2 text-[--color-foreground] shadow-sm focus:border-[--color-primary] focus:outline-none focus:ring-1 focus:ring-[--color-primary]"
+            <DatePicker
+              id="quote-preferred-date"
+              value={preferredDate}
+              onChange={setPreferredDate}
+              min={new Date()}
+              placeholder="Select campaign start date"
               disabled={disabled}
+              className={inputClass}
+              aria-label="Preferred start date"
             />
           </div>
           <div>
-            <label
-              htmlFor="quote-requirements"
-              className="mb-1 block text-sm font-medium text-[--color-foreground]"
-            >
+            <label htmlFor="quote-requirements" className={labelClass}>
               Special requirements
             </label>
             <textarea
               id="quote-requirements"
               value={requirements}
-              onChange={(event) => setRequirements(event.target.value)}
+              onChange={(e) => setRequirements(e.target.value)}
               rows={4}
               placeholder="Share any details that will help us price this placement for you."
-              className="w-full rounded-md border border-[--color-border] px-3 py-2 text-[--color-foreground] shadow-sm focus:border-[--color-primary] focus:outline-none focus:ring-1 focus:ring-[--color-primary]"
+              className={`${inputClass} min-h-[100px] resize-y`}
               disabled={disabled}
             />
           </div>
           {message && (
-            <p className={`text-sm ${status === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+            <p
+              className={`rounded-lg border px-3 py-2 text-sm ${
+                status === 'success'
+                  ? 'border-[--color-success]/50 bg-[--color-success]/10 text-[--color-success]'
+                  : 'border-[--color-error]/50 bg-[--color-error]/10 text-[--color-error]'
+              }`}
+            >
               {quoteId && status === 'success' ? `${message} Reference ID: ${quoteId}.` : message}
             </p>
           )}
-          <div className="flex items-center justify-between gap-3 pt-2">
+          <div className="flex flex-col-reverse items-center justify-between gap-3 pt-4 sm:flex-row">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-md border border-[--color-border] px-4 py-2 text-sm text-[--color-foreground]"
+              className="w-full rounded-lg border border-[--color-border] bg-transparent px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[--color-card-hover] sm:w-auto"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={disabled}
-              className="rounded-md bg-[--color-primary] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full rounded-lg bg-[--color-primary] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[--color-primary-hover] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
             >
               {status === 'loading' ? 'Sending...' : 'Send quote request'}
             </button>
           </div>
-          <p className="pt-1 text-xs text-[--color-muted]">
+          <p className="pt-2 text-center text-xs text-[--color-muted] sm:text-left">
             Typical response time: within 2 business days.
           </p>
         </form>
