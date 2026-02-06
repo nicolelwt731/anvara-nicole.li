@@ -92,6 +92,59 @@ export async function requireAuth(
   }
 }
 
+/** Populates req.user when session exists; does not reject when unauthenticated. Use for public routes that behave differently when logged in. */
+export async function optionalAuth(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const headers = new Headers();
+    Object.entries(req.headers).forEach(([key, value]) => {
+      if (value) {
+        headers.set(key, Array.isArray(value) ? value[0] : value);
+      }
+    });
+
+    const session = await auth.api.getSession({ headers });
+    if (!session?.user) {
+      next();
+      return;
+    }
+
+    const sponsor = await prisma.sponsor.findUnique({
+      where: { userId: session.user.id },
+      select: { id: true },
+    });
+    if (sponsor) {
+      req.user = {
+        id: session.user.id,
+        email: session.user.email,
+        role: 'sponsor',
+        sponsorId: sponsor.id,
+      };
+      next();
+      return;
+    }
+
+    const publisher = await prisma.publisher.findUnique({
+      where: { userId: session.user.id },
+      select: { id: true },
+    });
+    if (publisher) {
+      req.user = {
+        id: session.user.id,
+        email: session.user.email,
+        role: 'publisher',
+        publisherId: publisher.id,
+      };
+    }
+    next();
+  } catch {
+    next();
+  }
+}
+
 export function requireRole(allowedRoles: Array<'sponsor' | 'publisher'>) {
   return (req: AuthRequest, res: Response, next: NextFunction): void => {
     if (!req.user || !allowedRoles.includes(req.user.role)) {

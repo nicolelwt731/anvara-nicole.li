@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { getAdSlots } from '@/lib/api';
 import { trackMarketplaceEvent, trackButtonClick, trackMicroConversion } from '@/lib/analytics';
 import { getImageByCategory } from '@/lib/utils';
 
@@ -31,70 +32,43 @@ interface AdSlotGridProps {
   searchQuery?: string;
 }
 
-const MOCK_LISTINGS: AdSlot[] = [
-  {
-    id: '1',
-    name: 'Sponsored Integration',
-    description: 'In-video sponsored segment (2-3 min). Host demonstrates your product.',
-    type: 'VIDEO',
-    basePrice: 5000,
-    isAvailable: false,
-    publisher: { name: 'CodeTube' },
-  },
-  {
-    id: '2',
-    name: 'Pre-roll Video Ad (30s)',
-    description: '30-second non-skippable pre-roll. Premium placement with guaranteed views.',
-    type: 'VIDEO',
-    basePrice: 3500,
-    isAvailable: false,
-    publisher: { name: 'TechDaily' },
-  },
-  {
-    id: '3',
-    name: 'Newsletter Feature',
-    description: 'Dedicated section in our weekly newsletter sent to 50k subscribers.',
-    type: 'NEWSLETTER',
-    basePrice: 1500,
-    isAvailable: true,
-    publisher: { name: 'DevWeekly' },
-  },
-  {
-    id: '4',
-    name: 'Podcast Read',
-    description: '60-second mid-roll ad read by the host.',
-    type: 'PODCAST',
-    basePrice: 2000,
-    isAvailable: true,
-    publisher: { name: 'SyntaxFM' },
-  },
-  {
-    id: '5',
-    name: 'Banner Ad',
-    description: 'Sidebar banner on the main blog page.',
-    type: 'DISPLAY',
-    basePrice: 500,
-    isAvailable: true,
-    publisher: { name: 'CSS Tricks' },
-  },
-  {
-    id: '6',
-    name: 'Native Article',
-    description: 'Sponsored article written by our editorial team.',
-    type: 'NATIVE',
-    basePrice: 2500,
-    isAvailable: true,
-    publisher: { name: 'Smashing Mag' },
-  },
-].map((listing) => ({
-  ...listing,
-  imageUrl: getImageByCategory(listing.type, listing.name),
-}));
+function toNumber(value: unknown): number {
+  if (typeof value === 'number' && !Number.isNaN(value)) return value;
+  if (typeof value === 'string') return parseFloat(value) || 0;
+  if (value != null && typeof (value as { toString: () => string }).toString === 'function') {
+    return parseFloat((value as { toString: () => string }).toString()) || 0;
+  }
+  return 0;
+}
 
 export function AdSlotGrid({ filter = 'all', searchQuery = '' }: AdSlotGridProps) {
-  const [adSlots] = useState<AdSlot[]>(MOCK_LISTINGS);
-  const [loading] = useState(false);
-  const [error] = useState<string | null>(null);
+  const [adSlots, setAdSlots] = useState<AdSlot[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    getAdSlots()
+      .then((raw) => {
+        const list = Array.isArray(raw) ? raw : [];
+        const slots: AdSlot[] = list.map((item: Record<string, unknown>) => ({
+          id: String(item.id ?? ''),
+          name: String(item.name ?? ''),
+          description: item.description != null ? String(item.description) : undefined,
+          type: String(item.type ?? ''),
+          basePrice: toNumber(item.basePrice),
+          isAvailable: Boolean(item.isAvailable),
+          publisher: (item.publisher as { name?: string } | undefined)?.name
+            ? { name: (item.publisher as { name: string }).name }
+            : undefined,
+          imageUrl: getImageByCategory(String(item.type ?? ''), String(item.name ?? '')),
+        }));
+        setAdSlots(slots);
+      })
+      .catch(() => setError('Failed to load marketplace'))
+      .finally(() => setLoading(false));
+  }, []);
 
   const filteredSlots = adSlots.filter((slot) => {
     const matchesFilter =

@@ -7,6 +7,7 @@ import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { trackFormSubmit, trackManagementEvent } from '@/lib/analytics';
 import { showToast } from '@/app/components/toast';
+import { DatePicker } from '@/app/components/date-picker';
 
 interface Campaign {
   id: string;
@@ -41,13 +42,23 @@ export function CampaignForm({ campaign, onClose }: CampaignFormProps) {
   const isEditing = Boolean(campaign);
   const formRef = useRef<HTMLFormElement>(null);
   const router = useRouter();
+  const formatDateForInput = (dateString: string) =>
+    dateString ? dateString.split('T')[0] : '';
+
   const [startDate, setStartDate] = useState<string>(
-    campaign ? campaign.startDate.split('T')[0] : ''
+    campaign ? formatDateForInput(campaign.startDate) : ''
+  );
+  const [endDate, setEndDate] = useState<string>(
+    campaign ? formatDateForInput(campaign.endDate) : ''
   );
 
   const action = isEditing ? updateCampaign.bind(null, campaign!.id) : createCampaign;
 
   const [state, formAction] = useActionState(action, {});
+
+  useEffect(() => {
+    if (startDate && endDate && endDate < startDate) setEndDate(startDate);
+  }, [startDate]);
 
   useEffect(() => {
     if (state.success) {
@@ -71,14 +82,6 @@ export function CampaignForm({ campaign, onClose }: CampaignFormProps) {
       showToast(state.error || 'Failed to save campaign', 'error');
     }
   }, [state.success, state.error, isEditing, campaign?.id, onClose, router]);
-
-  const formatDateForInput = (dateString: string) => {
-    return dateString ? dateString.split('T')[0] : '';
-  };
-
-  const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setStartDate(e.target.value);
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-fade-in">
@@ -165,16 +168,15 @@ export function CampaignForm({ campaign, onClose }: CampaignFormProps) {
               <label htmlFor="startDate" className="block text-sm font-medium text-[--color-muted]">
                 Start Date *
               </label>
-              <input
-                type="date"
+              <input type="hidden" name="startDate" value={startDate} />
+              <DatePicker
                 id="startDate"
-                name="startDate"
                 value={startDate}
-                onChange={handleStartDateChange}
-                min={new Date().toISOString().split('T')[0]}
+                onChange={setStartDate}
+                min={new Date()}
+                placeholder="Select start date"
                 className="mt-1 block w-full rounded-lg border border-[--color-border] bg-[--color-background] px-4 py-2.5 text-white placeholder-[--color-muted] shadow-sm transition-all duration-200 focus:border-[--color-primary] focus:outline-none focus:ring-2 focus:ring-[--color-primary]/20"
-                style={{ colorScheme: 'light' }}
-                required
+                aria-label="Start date"
               />
               {state.fieldErrors?.startDate && (
                 <p className="mt-1 text-sm text-red-600">{state.fieldErrors.startDate}</p>
@@ -185,19 +187,19 @@ export function CampaignForm({ campaign, onClose }: CampaignFormProps) {
               <label htmlFor="endDate" className="block text-sm font-medium text-[--color-muted]">
                 End Date *
               </label>
-              <input
-                type="date"
+              <input type="hidden" name="endDate" value={endDate} />
+              <DatePicker
                 id="endDate"
-                name="endDate"
-                defaultValue={campaign ? formatDateForInput(campaign.endDate) : ''}
+                value={endDate}
+                onChange={setEndDate}
                 min={
-                  startDate || campaign
-                    ? formatDateForInput(campaign?.startDate || '')
-                    : new Date().toISOString().split('T')[0]
+                  startDate
+                    ? new Date(startDate + 'T12:00:00')
+                    : new Date()
                 }
+                placeholder="Select end date"
                 className="mt-1 block w-full rounded-lg border border-[--color-border] bg-[--color-background] px-4 py-2.5 text-white placeholder-[--color-muted] shadow-sm transition-all duration-200 focus:border-[--color-primary] focus:outline-none focus:ring-2 focus:ring-[--color-primary]/20"
-                style={{ colorScheme: 'light' }}
-                required
+                aria-label="End date"
               />
               {state.fieldErrors?.endDate && (
                 <p className="mt-1 text-sm text-red-600">{state.fieldErrors.endDate}</p>
